@@ -1,115 +1,91 @@
 /*
  * hasUniqueChars.c
  * 
- * TODO: replace this line with lines containing a description
+ * This program checks if a string has only unique printable characters,
+ * meaning no characters are repeated. It uses bitwise operations to track 
+ * which characters have been seen and exits if it encounters any invalid 
+ * characters (non-printing ASCII values).
  * 
- * Author: 
+ * Author: Noel Raehl
  */
 
 #include <stdio.h>  // fprintf, printf
 #include <stdlib.h> // exit() defined here
 #include <string.h> // useful string operations
-#include <ctype.h>  //useful character operations
-#include <stdbool.h>  // to define a boolean type and true, false
-                      // see https://en.wikibooks.org/wiki/C_Programming/stdbool.h
+#include <ctype.h>  // useful character operations
+#include <stdbool.h> // to define a boolean type and true, false
 
 #include "binary_convert.h"
 
-
 /*
  * This function is for debugging by printing out the value
- * of an input insigned long as a binary string.
+ * of an input unsigned long as a binary string.
  */
 void seeBits(unsigned long value, char *debug_text) {
-  
-  // string to represent binary value of variable value
-  char *bin_str;
-
-  bin_str = ulong_to_bin_str(value);
-  printf("%s%s\n", debug_text, bin_str);
-  free(bin_str);
-  
+    char *bin_str = ulong_to_bin_str(value);
+    printf("%s%s\n", debug_text, bin_str);
+    free(bin_str);
 }
 
-
-// TODO: Read this carefully to see how to loop over characters of a string
-// TODO: (Remove TODOs once you have completed the task they describe)
 /*
  * Given an input string of chars, check for any non-printing
  * characters and print an error and exit if the string has any.
  */
-void checkInvalid(char * inputStr) {
-  char nextChar;
-  int i;
-  
-  for(i = 0; i < strlen(inputStr); i++) {
-    nextChar = inputStr[i];
+void checkInvalid(char *inputStr) {
+    char nextChar;
+    int i;
 
-    // if nextChar is invalid (31 or less or 127 as an ascii char code), then bail out
-    if ((nextChar <= 31 ) || (nextChar == 127)) {
-      fprintf(stderr, "invalid character in string\n");
-      exit(EXIT_FAILURE);
+    for (i = 0; i < strlen(inputStr); i++) {
+        nextChar = inputStr[i];
+
+        if ((nextChar <= 31) || (nextChar == 127)) {
+            fprintf(stderr, "invalid character in string\n");
+            exit(EXIT_FAILURE);
+        }
     }
-  }
 }
 
-
 /*
- * TODO: Replace this code by a good description this function takes in, does and returns.
- * Include the error conditions that cause it to exit with failure.
+ * This function checks if the input string contains only unique printable
+ * characters, ignoring spaces. It uses two bit vectors to track which 
+ * characters have been seen. It returns true if all characters are unique, 
+ * and false if any duplicates (other than spaces) are found.
  */
-bool hasUniqueChars(char * inputStr) {
-  // bail out quickly if any invalid characters
-  checkInvalid(inputStr);
-  
-  int i;   // loop counter
-  
-  // unsigned long can handle 64 different chars in a string
-  // if a bit at a position is 1, then we have seen that character
-  unsigned long checkBitsA_z = 0;   // for checking A through z and {|}~
-  unsigned long checkBitsexcl_amp =0;  // for checking ! though @ 
+bool hasUniqueChars(char *inputStr) {
+    unsigned long checkBitsA_z = 0;       // For 'A' through '~' (ASCII 65-126)
+    unsigned long checkBitsexcl_amp = 0;  // For '!' through '@' (ASCII 33-64)
 
-  char nextChar;         // next character in string to check
+    int i;
+    char nextChar;
 
-  // -------------------------------------------------------------
-  // This section contains code to display the initial values of checkBitsA_z
-  // and checkBitsexcl_amp, for debugging purposes. 
-  // It also illustrates how to use the seeBits function for debugging.
-  // Printed values should initially be all zeros
-  // TODO: remove or comment out this code when satisfied of function correctness
-  
-  char debug_str_A_z[128];
-  strcpy(debug_str_A_z, "checkBitsA_z before: \n");
-  seeBits(checkBitsA_z, debug_str_A_z);
-  
-  char debug_str_excl_amp[128];
-  strcpy(debug_str_excl_amp, "checkBitsexcl_amp before: \n");
-  seeBits(checkBitsexcl_amp, debug_str_excl_amp);
-  // -------------------------------------------------------------
+    for (i = 0; i < strlen(inputStr); i++) {
+        nextChar = inputStr[i];
 
-  // TODO: Declare additional variables you need here
+        if (nextChar == ' ') {
+            continue;
+        }
 
-  
-  for(i = 0; i < strlen(inputStr); i++) {
-    nextChar = inputStr[i];
-    // TODO: Add your code here to check nextChar, see if it is a duplicate, and update the checkBits variables
+        // Characters from 'A' to '~' (ASCII 65 to 126)
+        if (nextChar >= 'A' && nextChar <= '~') {
+            int bitIndex = nextChar - 'A'; 
 
-    // -------------------------------------------------------------
-    // Below this are examples of debugging print statements you could use
-    // Move/use as makes sense for you!
-    // Modify to work on checkBitsexcl_amp
-    // TODO: Comment out or remove when your function works correctly
-    printf("nextchar int value: %d\n", nextChar);
-    char char_str[2] = "\0";
-    char_str[0] = nextChar;
-    strcpy(debug_str_A_z, "nextchar: ");
-    strcat(debug_str_A_z, char_str);
-    strcat(debug_str_A_z,", checkBitsA_z: \n");
-    seeBits(checkBitsA_z, debug_str_A_z);
-    // ------------------------------------------------------------- 
-  }
+            // Check if the bit is already set in checkBitsA_z
+            if ((checkBitsA_z >> bitIndex) & 1) {
+                return false; 
+            }
+            checkBitsA_z |= (1UL << bitIndex);  
+        }
+        // Characters from '!' to '@' (ASCII 33 to 64)
+        else if (nextChar >= '!' && nextChar <= '@') {
+            int bitIndex = nextChar - '!'; 
 
-  // if through all the characters, then no duplicates found
-  return true;
-  
+            // Check if the bit is already set in checkBitsexcl_amp
+            if ((checkBitsexcl_amp >> bitIndex) & 1) {
+                return false; 
+            }
+            checkBitsexcl_amp |= (1UL << bitIndex);  
+        }
+    }
+
+    return true;
 }
